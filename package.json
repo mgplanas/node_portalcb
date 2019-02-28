@@ -17,6 +17,8 @@
         "jsonwebtoken": "^8.4.0",
         "moment": "^2.24.0",
         "mysql": "^2.16.0",
+        "passport": "^0.4.0",
+        "passport-ldapauth": "^2.1.2",
         "underscore": "^1.9.1"
     },
     "devDependencies": {}
