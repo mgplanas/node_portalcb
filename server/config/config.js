@@ -24,14 +24,16 @@ process.env.SEED_TOKEN = process.env.SEED_TOKEN || 'este-es-el-seed-de-desarroll
 
 
 // =========================
-// Base de Datos MYSQL
+// Base de Datos
 // =========================
-process.env.MYSQL_CON_LIMIT = process.env.MYSQL_CON_LIMIT || 100;
-process.env.MYSQL_DATESTRINGS = process.env.MYSQL_DATESTRINGS || 'false';
-process.env.MYSQL_HOST = process.env.MYSQL_HOST || 'localhost';
-process.env.MYSQL_USER = process.env.MYSQL_USER || 'portaldbuser';
-process.env.MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || 'portaldbuser123';
-process.env.MYSQL_DB = process.env.MYSQL_DB || 'portaldb';
+let urlDB;
+if (process.env.NODE_ENV === 'DEV') {
+    urlDB = 'mongodb://localhost:27017/portaldb';
+} else {
+    urlDB = process.env.MONGO_URI;
+}
+
+process.env.URL_DB = urlDB;
 
 
 // ==============================================================

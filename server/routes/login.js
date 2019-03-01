@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const bodyParser = require('body-parser');
 const LdapStrategy = require('passport-ldapauth');
+const Usuario = require('../models/usuario');
 
 let OPTS = {
     usernameField: process.env.USERNAME_FIELD,
@@ -16,15 +17,17 @@ let OPTS = {
     }
 };
 
-var app = express();
+let router = express.Router();
 
 passport.use(new LdapStrategy(OPTS));
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(passport.initialize());
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: false }));
+router.use(passport.initialize());
 
-app.post('/login', function(req, res, next) {
+router.post('/', function(req, res, next) {
+
+    let body = req.body;
 
     passport.authenticate('ldapauth', (err, user, info) => {
 
@@ -34,18 +37,37 @@ app.post('/login', function(req, res, next) {
                 err
             });
         }
+        // Verifico si el correo existe;
+        Usuario.findOne({ username: body.username }, (err, usuarioDB) => {
 
-        let token = jwt.sign({
-            usuario: user.cn
-        }, process.env.SEED_TOKEN, { expiresIn: process.env.CADUCIDAD_TOKEN });
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
 
-        res.json({
-            ok: true,
-            usuario: user,
-            token,
-            info
+            if (!usuarioDB) {
+                return res.status(400).json({
+                    ok: false,
+                    err: {
+                        message: '(Usuario) o contraseña incorrectos'
+                    }
+                });
+            }
+
+            let token = jwt.sign({
+                usuario: usuarioDB
+            }, process.env.SEED_TOKEN, { expiresIn: process.env.CADUCIDAD_TOKEN });
+
+            res.json({
+                ok: true,
+                usuario: usuarioDB,
+                token,
+                info
+            });
         });
     })(req, res, next);
 });
 
-module.exports = app;
+module.exports = router;

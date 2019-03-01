@@ -1,12 +1,14 @@
 const express = require('express');
-const app = express();
+const router = express.Router();
 
-// app.use(require('./usuario'));
-app.use(require('./login'));
+router.use('/usuarios', require('./usuarios'));
+router.use('/login', require('./login'));
+router.use('/gerencias', require('./gerencias'));
+// router.use('/grupos', require('./grupos'));
 // app.use(require('./categoria'));
 // app.use(require('./producto'));
 // app.use(require('./upload'));
 // app.use(require('./imagenes'));
 
 
-module.exports = app;
+module.exports = router;
