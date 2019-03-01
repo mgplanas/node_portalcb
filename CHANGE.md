@@ -1,3 +1,8 @@
+## FEAT-AUDIT-FIELDS
+** Fecha :** 2019-03-01
+### Listado de caractarísticas
+- Arreglo de crud en la actualización de los campos de auditoria
+
 ## FEAT-CRUD-GERENCIAS
 ** Fecha :** 2019-02-28
 ### Listado de caractarísticas

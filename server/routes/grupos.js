@@ -113,6 +113,7 @@ router.post('/', verificaToken, (req, res) => {
         nombre: body.nombre,
         descripcion: body.descripcion,
         audit: {
+            created: Date.now(),
             createdBy: req.usuario._id
         }
     });
@@ -162,10 +163,8 @@ router.put('/:id', verificaToken, (req, res) => {
 
         grupoDB.nombre = body.nombre;
         grupoDB.descripcion = body.descripcion;
-        grupoDB.audit = {
-            modified: Date.now(),
-            modifiedBy: req.usuario._id
-        }
+        grupoDB.audit.modified = Date.now();
+        grupoDB.audit.modifiedBy = req.usuario._id;
 
 
         grupoDB.save((err, grupoGuardado) => {

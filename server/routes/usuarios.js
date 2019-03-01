@@ -48,6 +48,7 @@ router.post('/', verificaToken, (req, res) => {
         username: body.username,
         legajo: body.legajo,
         audit: {
+            created: Date.now(),
             createdBy: req.usuario._id
         }
     });

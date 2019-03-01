@@ -113,6 +113,7 @@ router.post('/', verificaToken, (req, res) => {
         nombre: body.nombre,
         sigla: body.sigla,
         audit: {
+            created: Date.now(),
             createdBy: req.usuario._id
         }
     });
@@ -162,11 +163,8 @@ router.put('/:id', verificaToken, (req, res) => {
 
         gerenciaDB.nombre = body.nombre;
         gerenciaDB.sigla = body.sigla;
-        gerenciaDB.audit = {
-            modified: Date.now(),
-            modifiedBy: req.usuario._id
-        }
-
+        gerenciaDB.audit.modified = Date.now();
+        gerenciaDB.audit.modifiedBy = req.usuario._id;
 
         gerenciaDB.save((err, gerenciaGuardada) => {
 
