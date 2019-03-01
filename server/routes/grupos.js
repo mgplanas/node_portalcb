@@ -6,34 +6,25 @@ const express = require('express');
 
 // Middleware de autenticacion
 const { verificaToken } = require('../middlewares/autenticacion');
-// Pool de coneccion Mysql
-let connection = require('../db/mysql');
 
 let router = express.Router()
-
-// Referencia al Modelo
-let GrupoModel = require('../models/gruposModel');
-
+let Grupo = require('../models/grupo');
+const fields = 'nombre descripcion';
 
 // ===========================
-//  Obtener grupos
+// Obtener todos los grupos
 // ===========================
 router.get('/', verificaToken, (req, res) => {
 
-    // Tomo una nueva conexion a DB
-    connection.acquire((err, con) => {
+    let desde = req.query.desde || 0;
+    desde = Number(desde);
+    let limite = req.query.limite || 5;
+    limite = Number(limite);
 
-        if (err) {
-            return res.status(500).json({
-                ok: false,
-                err
-            });
-        }
-
-        let Grupo = new GrupoModel(con);
-        Grupo.CRUD.getAll((err, grupos) => {
-            con.release();
-
+    Grupo.find({ "audit.deleted": { $exists: false } }, fields)
+        .skip(desde)
+        .limit(limite)
+        .exec((err, grupos) => {
             if (err) {
                 return res.status(500).json({
                     ok: false,
@@ -45,8 +36,7 @@ router.get('/', verificaToken, (req, res) => {
                 ok: true,
                 grupos
             });
-        });
-    });
+        })
 });
 
 // ===========================
@@ -55,113 +45,147 @@ router.get('/', verificaToken, (req, res) => {
 router.get('/:id', verificaToken, (req, res) => {
 
     let id = req.params.id;
-    // Tomo una nueva conexion a DB
-    connection.acquire((err, con) => {
 
-        if (err) return res.status(500).json({ ok: false, err });
+    Grupo.findById(id, fields)
+        .exec((err, grupoDB) => {
 
-        let Grupo = new GrupoModel(con);
-        Grupo.CRUD.get(id, (err, grupo) => {
-            con.release();
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
 
-            if (err) return res.status(500).json({ ok: false, err });
+            if (!grupoDB) {
+                return res.status(400).json({
+                    ok: false,
+                    err: {
+                        message: 'ID no existe'
+                    }
+                });
+            }
 
             res.json({
                 ok: true,
-                grupo
+                grupo: grupoDB
             });
+
         });
-    });
+
 });
+
 // ===========================
-// Crear un nuevo grupo
-// fields: nombre
+//  Buscar Grupos por termino
+// ===========================
+router.get('/buscar/:termino', verificaToken, (req, res) => {
+
+    let termino = req.params.termino;
+
+    let regex = new RegExp(termino, 'i');
+
+    Grupo.find({ nombre: regex }, fields)
+        .exec((err, grupos) => {
+
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            res.json({
+                ok: true,
+                grupos
+            })
+
+        })
+});
+
+// ===========================
+// Crear una nuevo grupo
+// fields: nombre, descripcion
 // ===========================
 router.post('/', verificaToken, (req, res) => {
 
     let body = req.body;
 
-    connection.acquire((err, con) => {
-        if (err) return res.status(500).json({ ok: false, err });
+    let grupo = new Grupo({
+        nombre: body.nombre,
+        descripcion: body.descripcion,
+        audit: {
+            createdBy: req.usuario._id
+        }
+    });
 
-        let Grupo = new GrupoModel(con);
+    grupo.save((err, grupoDB) => {
 
-        //Creo la transacción
-        con.beginTransaction(function(err) {
-            if (err) return res.status(500).json({ ok: false, err });
-
-            // TODO: req.usuario.id
-            Grupo.CRUD.create(body.grupo, 1, (err, id) => {
-                if (err) {
-                    //Si hubo error rollback y retorno el error
-                    con.rollback(function() { con.release(); });
-                    return res.status(500).json({ ok: false, err });
-                }
-
-                //Realizo el comit de la base
-                con.commit(function(err) {
-                    if (err) {
-                        //Si hubo un error en el commit hago el rollback
-                        con.rollback(function() { con.release(); });
-                        return res.status(500).json({ ok: false, err });
-                    }
-                    //libero la conexion del pool
-                    con.release();
-
-                    //Si todo salioi bien devuelvo la respuesta
-                    res.status(201).json({
-                        ok: true,
-                        id
-                    });
-                });
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
             });
+        }
+
+        res.status(201).json({
+            ok: true,
+            grupo: grupoDB
         });
+
     });
 
 });
 // ===========================
-//  Actualizar un grupo
+//  Actualizar un Grupo
 // ===========================
 router.put('/:id', verificaToken, (req, res) => {
+
     let id = req.params.id;
     let body = req.body;
 
-    connection.acquire((err, con) => {
-        if (err) return res.status(500).json({ ok: false, err });
+    Grupo.findById(id, (err, grupoDB) => {
 
-        let Grupo = new GrupoModel(con);
-
-        //Creo la transacción
-        con.beginTransaction(function(err) {
-            if (err) return res.status(500).json({ ok: false, err });
-
-            // TODO: req.usuario.id
-            Grupo.CRUD.update(id, body.grupo, 1, (err, affectedRows) => {
-                if (err) {
-                    //Si hubo error rollback y retorno el error
-                    con.rollback(function() { con.release(); });
-                    return res.status(500).json({ ok: false, err });
-                }
-
-                //Realizo el comit de la base
-                con.commit(function(err) {
-                    if (err) {
-                        //Si hubo un error en el commit hago el rollback
-                        con.rollback(function() { con.release(); });
-                        return res.status(500).json({ ok: false, err });
-                    }
-                    //libero la conexion del pool
-                    con.release();
-
-                    //Si todo salioi bien devuelvo la respuesta
-                    res.status(200).json({
-                        ok: true,
-                        affectedRows
-                    });
-                });
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
             });
+        }
+
+        if (!grupoDB) {
+            return res.status(400).json({
+                ok: false,
+                err: {
+                    message: 'El ID no existe'
+                }
+            });
+        }
+
+        grupoDB.nombre = body.nombre;
+        grupoDB.descripcion = body.descripcion;
+        grupoDB.audit = {
+            modified: Date.now(),
+            modifiedBy: req.usuario._id
+        }
+
+
+        grupoDB.save((err, grupoGuardado) => {
+
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            res.json({
+                ok: true,
+                grupo: grupoGuardado
+            });
+
         });
+
     });
+
 });
 
 // ===========================
@@ -170,42 +194,45 @@ router.put('/:id', verificaToken, (req, res) => {
 router.delete('/:id', verificaToken, (req, res) => {
     let id = req.params.id;
 
-    connection.acquire((err, con) => {
-        if (err) return res.status(500).json({ ok: false, err });
+    Grupo.findById(id, (err, grupoDB) => {
 
-        let Grupo = new GrupoModel(con);
-
-        //Creo la transacción
-        con.beginTransaction(function(err) {
-            if (err) return res.status(500).json({ ok: false, err });
-
-            // TODO: req.usuario.id
-            Grupo.CRUD.del(id, 1, (err, affectedRows) => {
-                if (err) {
-                    //Si hubo error rollback y retorno el error
-                    con.rollback(function() { con.release(); });
-                    return res.status(500).json({ ok: false, err });
-                }
-
-                //Realizo el comit de la base
-                con.commit(function(err) {
-                    if (err) {
-                        //Si hubo un error en el commit hago el rollback
-                        con.rollback(function() { con.release(); });
-                        return res.status(500).json({ ok: false, err });
-                    }
-                    //libero la conexion del pool
-                    con.release();
-
-                    //Si todo salioi bien devuelvo la respuesta
-                    res.status(200).json({
-                        ok: true,
-                        affectedRows
-                    });
-                });
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
             });
-        });
-    });
+        }
+
+        if (!grupoDB) {
+            return res.status(400).json({
+                ok: false,
+                err: {
+                    message: 'ID no existe'
+                }
+            });
+        }
+
+        grupoDB.audit.deleted = Date.now();
+        grupoDB.audit.deletedBy = req.usuario._id;
+
+        grupoDB.save((err, grupoDeleted) => {
+
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            res.json({
+                ok: true,
+                grupo: grupoDeleted,
+                mensaje: 'Grupo eliminado'
+            });
+
+        })
+
+    })
 });
 
 module.exports = router;

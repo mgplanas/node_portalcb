@@ -5,15 +5,28 @@
 - Se generan las rutas para la administración de gerencias 
 - Se generan las rutas para la administración de grupos
 - Se adecúan las tablas para tener los datos de auditoría estandart
-    - Se cambia id_gerencia por id
-    - Se cambia id_grupo por id
     - Se agregan campos de auditoria (created, createdBy, modified, modifiedBy, deleted, deletedBy) en Gerencia y grupo
+- Version MongoDB
+- Busqueda y paginado
 
 
 ```
-[GET]\genencia
-[PUT]\genencia\:id
-[DELETE]\genencia\:id
-[POST]\genencia\
+[GET]/genencias?desde&limite
+[GET]/genencias/buscar/:termino
+[PUT]/genencias/:id
+[DELETE]/genencias/:id
+[POST]/genencias/
+
+[GET]/grupos?desde&limite
+[GET]/grupos/buscar/:termino
+[PUT]/grupos/:id
+[DELETE]/grupos/:id
+[POST]/grupos/
+
+[GET]/usuarios?desde&limite
+[GET]/usuarios/buscar/:termino
+[PUT]/usuarios/:id
+[DELETE]/usuarios/:id
+[POST]/usuarios/
 
 ```
