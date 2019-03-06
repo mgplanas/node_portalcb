@@ -75,7 +75,7 @@ router.get('/:id', verificaToken, (req, res) => {
 });
 
 // ===========================
-//  Buscar productos
+//  Buscar gerencias
 // ===========================
 router.get('/buscar/:termino', verificaToken, (req, res) => {
 
@@ -161,8 +161,8 @@ router.put('/:id', verificaToken, (req, res) => {
             });
         }
 
-        gerenciaDB.nombre = body.nombre;
-        gerenciaDB.sigla = body.sigla;
+        gerenciaDB.nombre = body.nombre || gerenciaDB.nombre;
+        gerenciaDB.sigla = body.sigla || gerenciaDB.sigla;
         gerenciaDB.audit.modified = Date.now();
         gerenciaDB.audit.modifiedBy = req.usuario._id;
 

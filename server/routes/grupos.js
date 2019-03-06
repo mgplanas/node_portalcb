@@ -9,7 +9,7 @@ const { verificaToken } = require('../middlewares/autenticacion');
 
 let router = express.Router()
 let Grupo = require('../models/grupo');
-const fields = 'nombre descripcion';
+const fields = 'nombre descripcion gerencia';
 
 // ===========================
 // Obtener todos los grupos
@@ -22,6 +22,7 @@ router.get('/', verificaToken, (req, res) => {
     limite = Number(limite);
 
     Grupo.find({ "audit.deleted": { $exists: false } }, fields)
+        .populate('gerencia', '_id nombre sigla')
         .skip(desde)
         .limit(limite)
         .exec((err, grupos) => {
@@ -47,6 +48,7 @@ router.get('/:id', verificaToken, (req, res) => {
     let id = req.params.id;
 
     Grupo.findById(id, fields)
+        .populate('gerencia', '_id nombre sigla')
         .exec((err, grupoDB) => {
 
             if (err) {
@@ -84,6 +86,7 @@ router.get('/buscar/:termino', verificaToken, (req, res) => {
     let regex = new RegExp(termino, 'i');
 
     Grupo.find({ nombre: regex }, fields)
+        .populate('gerencia', '_id nombre sigla')
         .exec((err, grupos) => {
 
             if (err) {
@@ -112,6 +115,7 @@ router.post('/', verificaToken, (req, res) => {
     let grupo = new Grupo({
         nombre: body.nombre,
         descripcion: body.descripcion,
+        gerencia: body.gerencia,
         audit: {
             created: Date.now(),
             createdBy: req.usuario._id
@@ -161,8 +165,9 @@ router.put('/:id', verificaToken, (req, res) => {
             });
         }
 
-        grupoDB.nombre = body.nombre;
-        grupoDB.descripcion = body.descripcion;
+        grupoDB.nombre = body.nombre || grupoDB.nombre;
+        grupoDB.descripcion = body.descripcion || grupoDB.descripcion;
+        grupoDB.gerencia = body.gerencia || grupoDB.gerencia;
         grupoDB.audit.modified = Date.now();
         grupoDB.audit.modifiedBy = req.usuario._id;
 

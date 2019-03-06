@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 
 let grupoSchema = new Schema({
+    gerencia: { type: Schema.Types.ObjectId, ref: 'Gerencia', required: [true, 'La gerencia es necesaria'] },
     nombre: { type: String, required: [true, 'El nombre del grupo es necesario'] },
     descripcion: { type: String },
     audit: {

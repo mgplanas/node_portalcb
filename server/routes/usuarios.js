@@ -3,7 +3,7 @@ const Usuario = require('../models/usuario');
 const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
 
 const _ = require('underscore');
-const fieldsArr = ['username', 'nombre', 'apellido', 'email', 'legajo', 'img'];
+const fieldsArr = ['username', 'nombre', 'apellido', 'email', 'legajo', 'img', 'gerencia', 'grupo', 'contacto', 'cargo'];
 const fields = fieldsArr.join(' ');
 
 const router = express.Router();
@@ -17,6 +17,8 @@ router.get('/', verificaToken, (req, res) => {
     limite = Number(limite);
 
     Usuario.find({ "audit.deleted": { $exists: false } }, fields)
+        .populate('gerencia', 'nombre sigla')
+        .populate('grupo', 'nombre')
         .skip(desde)
         .limit(limite)
         .exec((err, usuarios) => {
@@ -36,6 +38,35 @@ router.get('/', verificaToken, (req, res) => {
             })
         })
 
+});
+
+// ===========================
+//  Buscar Usuario por termino
+// ===========================
+router.get('/buscar/:termino', verificaToken, (req, res) => {
+
+    let termino = req.params.termino;
+
+    let regex = new RegExp(termino, 'i');
+
+    Usuario.find({ nombre: regex }, fields)
+        .populate('gerencia', 'nombre sigla')
+        .populate('grupo', 'nombre')
+        .exec((err, usuarios) => {
+
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            res.json({
+                ok: true,
+                usuarios
+            })
+
+        })
 });
 router.post('/', verificaToken, (req, res) => {
 
@@ -74,40 +105,47 @@ router.put('/:id', verificaToken, (req, res) => {
     let id = req.params.id;
     let body = req.body;
 
-    Usuario.findById(id, (err, usuarioDB) => {
-
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
-            });
-        }
-
-        usuarioDB.apellido = body.apellido || usuarioDB.apellido;
-        usuarioDB.nombre = body.nombre || usuarioDB.nombre;
-        usuarioDB.username = body.username || usuarioDB.username;
-        usuarioDB.email = body.email || usuarioDB.email;
-        usuarioDB.legajo = body.legajo || usuarioDB.legajo;
-        usuarioDB.audit.modifiedBy = req.usuario._id;
-        usuarioDB.audit.modified = Date.now();
-
-        usuarioDB.save((err, usuarioGuardado) => {
+    Usuario.findById(id, fields)
+        .populate('gerencia', 'nombre sigla')
+        .populate('grupo', 'nombre')
+        .exec((err, usuarioDB) => {
 
             if (err) {
-                return res.status(500).json({
+                return res.status(400).json({
                     ok: false,
                     err
                 });
             }
 
-            res.json({
-                ok: true,
-                usuario: usuarioGuardado
+            usuarioDB.apellido = body.apellido || usuarioDB.apellido;
+            usuarioDB.nombre = body.nombre || usuarioDB.nombre;
+            usuarioDB.username = body.username || usuarioDB.username;
+            usuarioDB.email = body.email || usuarioDB.email;
+            usuarioDB.legajo = body.legajo || usuarioDB.legajo;
+            usuarioDB.cargo = body.cargo || usuarioDB.cargo;
+            usuarioDB.contacto = body.contacto || usuarioDB.contacto;
+            usuarioDB.gerencia = body.gerencia || usuarioDB.gerencia;
+            usuarioDB.grupo = body.grupo || usuarioDB.grupo;
+            usuarioDB.audit.modifiedBy = req.usuario._id;
+            usuarioDB.audit.modified = Date.now();
+
+            usuarioDB.save((err, usuarioGuardado) => {
+
+                if (err) {
+                    return res.status(500).json({
+                        ok: false,
+                        err
+                    });
+                }
+
+                res.json({
+                    ok: true,
+                    usuario: usuarioGuardado
+                });
+
             });
 
         });
-
-    });
 
 });
 router.delete('/:id', verificaToken, (req, res) => {

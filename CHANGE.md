@@ -1,7 +1,21 @@
+## FEAT-USAURIOS-FIX
+**Fecha :** 2019-03-06
+### Listado de caractarísticas
+- Se agregan los campos faltantes de los usuarios
+    - cargo
+    - gerencia
+    - grupo
+    - contacto
+- Se agrega la relación de gerencia a los grupos
+- Se arreglan las API
+    - POST, PUT y GET (lookup)
+
+
 ## FEAT-AUDIT-FIELDS
 **Fecha :** 2019-03-01
 ### Listado de caractarísticas
 - Arreglo de crud en la actualización de los campos de auditoria
+
 
 ## FEAT-CRUD-GERENCIAS
 **Fecha :** 2019-02-28
